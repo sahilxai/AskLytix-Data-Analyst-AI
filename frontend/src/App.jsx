@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import axios from 'axios'
+import api from './api'
 import UploadZone from './components/UploadZone'
 import DataPreview from './components/DataPreview'
 import ChatInterface from './components/ChatInterface'
@@ -49,7 +49,7 @@ function App() {
 
   const handleDeleteFile = async () => {
     try {
-      await axios.delete('http://localhost:8000/api/delete-data')
+      await api.delete('/api/delete-data')
     } catch (err) {
       console.warn("Failed to delete backend dataset file:", err)
     }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import axios from 'axios'
+import api from '../api'
 import { Send, Loader2, Bot, User, Code, FileCode2, Sparkles, BarChart2, PieChart, LineChart, Activity, Grid, ArrowRight, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
@@ -32,7 +32,7 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
   const fetchSuggestions = async () => {
     setLoadingSuggestions(true)
     try {
-      const response = await axios.get('http://localhost:8000/api/suggest-visualizations')
+      const response = await api.get('/api/suggest-visualizations')
       if (response.data && response.data.suggestions) {
         setSuggestions(response.data.suggestions)
       }
@@ -70,7 +70,7 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
 
     try {
       // Send to backend with 120s timeout
-      const response = await axios.post('http://localhost:8000/api/chat', {
+      const response = await api.post('/api/chat', {
         message: userMessage,
         history: chatHistory
       }, { timeout: 120000 })

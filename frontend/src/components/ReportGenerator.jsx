@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import axios from 'axios'
+import api from '../api'
 import { FileText, Download, X, Loader2 } from 'lucide-react'
 
 export default function ReportGenerator({ currentChart }) {
@@ -16,7 +16,7 @@ export default function ReportGenerator({ currentChart }) {
     setError(null)
     
     try {
-      const response = await axios.get('http://localhost:8000/api/generate-insights')
+      const response = await api.get('/api/generate-insights')
       setReportData(response.data)
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to generate AI insights for the report.")

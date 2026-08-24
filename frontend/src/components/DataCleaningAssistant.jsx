@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../api'
 import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Download } from 'lucide-react'
 
 export default function DataCleaningAssistant({ datasetContext, setDatasetContext }) {
@@ -18,7 +18,7 @@ export default function DataCleaningAssistant({ datasetContext, setDatasetContex
     setIsLoading(true)
     setError(null)
     try {
-      const response = await axios.get('http://localhost:8000/api/data-health')
+      const response = await api.get('/api/data-health')
       setHealthStatus(response.data)
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to check data health.")
@@ -31,7 +31,7 @@ export default function DataCleaningAssistant({ datasetContext, setDatasetContex
     setIsCleaning(true)
     setError(null)
     try {
-      const response = await axios.post('http://localhost:8000/api/clean-data', { action: "auto" })
+      const response = await api.post('/api/clean-data', { action: "auto" })
       // response.data contains the new dataset context
       setHealthStatus(null) // Reset health status to force recheck or signal we're clean
       setDatasetContext({
@@ -45,6 +45,22 @@ export default function DataCleaningAssistant({ datasetContext, setDatasetContex
       setError(err.response?.data?.detail || "Failed to clean data.")
     } finally {
       setIsCleaning(false)
+    }
+  }
+
+  const handleDownloadData = async () => {
+    try {
+      const response = await api.get('/api/download-data', { responseType: 'blob' })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', datasetContext?.filename || 'cleaned_data.csv')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to download data.")
     }
   }
 
@@ -107,14 +123,14 @@ export default function DataCleaningAssistant({ datasetContext, setDatasetContex
           {isCleaning ? 'Cleaning Data...' : 'Auto-Clean Data'}
         </button>
 
-        <a
-          href="http://localhost:8000/api/download-data"
-          download="cleaned_data.csv"
+        <button
+          type="button"
+          onClick={handleDownloadData}
           className="w-full py-2.5 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 hover:border-emerald-400/70 text-emerald-400 text-sm font-medium rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
         >
           <Download size={16} />
           Download
-        </a>
+        </button>
       </div>
     </div>
   )

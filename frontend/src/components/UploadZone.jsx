@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../api'
 import { UploadCloud, FileType, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function UploadZone({ onUploadSuccess }) {
@@ -64,7 +64,7 @@ export default function UploadZone({ onUploadSuccess }) {
     formData.append('file', file)
 
     try {
-      const response = await axios.post('http://localhost:8000/api/upload', formData, {
+      const response = await api.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
