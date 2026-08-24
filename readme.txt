@@ -4,7 +4,7 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-SECTION 1: DEPENDENCIES & REQUIREMENTS MISSING IN COPIED FOLDERS
+SECTION 1: DEPENDENCIES & REQUIREMENTS
 --------------------------------------------------------------------------------
 When you copy or clone this project folder to another location or repository,
 the following directories and files are ignored / automatically omitted to save
