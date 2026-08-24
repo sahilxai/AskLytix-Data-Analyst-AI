@@ -99,7 +99,14 @@ def upload_dataset_to_supabase(user_id: str, csv_bytes: bytes):
             file_options={"content-type": "text/csv", "upsert": "true"}
         )
     except Exception as e:
-        print(f"Warning: Failed to upload dataset to Supabase Storage: {e}")
+        try:
+            supabase_admin.storage.from_(SUPABASE_BUCKET).update(
+                path=storage_path,
+                file=csv_bytes,
+                file_options={"content-type": "text/csv"}
+            )
+        except Exception as err:
+            print(f"Warning: Failed to upload dataset to Supabase Storage: {err}")
 
 def ensure_user_dataset_local(user_id: str) -> str:
     """Ensure user dataset exists locally. If missing, download from Supabase Storage."""
