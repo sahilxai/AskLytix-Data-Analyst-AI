@@ -1,0 +1,7 @@
+.env
+.env.*
+venv/
+__pycache__/
+current_data.csv
+cleaned_data.csv
+*.log

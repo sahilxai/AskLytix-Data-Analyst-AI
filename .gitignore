@@ -1,0 +1,28 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# Python Virtual Environments & Caches
+venv/
+backend/venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary / Session Data Files
+current_data.csv
+cleaned_data.csv
+*.log
+
+# Node / Frontend Dependencies & Builds
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# OS / IDE generated files
+.DS_Store
+.vscode/
+.idea/
