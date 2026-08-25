@@ -21,11 +21,24 @@
 
 ---
 
+## 🤖 LLM Model & AI Engine
+
+- **Model Used**: `openai/gpt-oss-120b`
+- **Inference Platform**: [Groq Cloud LPU Engine](https://groq.com/)
+- **Integration**: `backend/ai_agent.py` via Groq REST API
+- **Key Capabilities**:
+  - **Natural Language to Code**: Converts user queries into executable Pandas data transformations and Plotly charts.
+  - **Smart Visual Suggestions**: Analyzes dataset headers and data types to recommend relevant analytical visualizations.
+  - **Executive Analytics**: Generates structured business summaries, key findings, and action items for downloadable reports.
+  - **Sandboxed Execution**: Generated Python scripts execute within a safe, isolated runtime (`backend/sandbox.py`).
+
+---
+
 ## 🏗️ Architecture & Stack
 
 ```text
 [ React 19 Frontend ]  <--->  [ FastAPI Python Backend ]  <--->  [ Groq LLM API ]
-    (Hosted on Netlify)            (Hosted on Render)          (Data Insights Engine)
+    (Hosted on Netlify)            (Hosted on Render)          (openai/gpt-oss-120b)
              │                             │
              └───────────────┬─────────────┘
                              ▼

@@ -24,7 +24,7 @@ space and prevent committing secrets. They MUST be restored in local development
    - pandas (2.0+) & numpy (1.24+)      -> Data processing & manipulation
    - plotly (5.20+)                     -> Interactive chart JSON generation
    - python-dotenv (1.0+)              -> Loads environment variables from .env
-   - requests (2.31+)                  -> Groq API HTTP client
+   - requests (2.31+)                  -> Groq API HTTP client (LLM Model: openai/gpt-oss-120b)
    - openpyxl (3.1+)                   -> Excel (.xlsx/.xls) file reader
    - python-multipart (0.0.9)          -> Multipart file upload support
    - supabase (2.4.0+)                 -> Supabase Admin & Storage Python client
@@ -69,7 +69,7 @@ SECTION 2: CURRENT PROJECT ARCHITECTURE & FILE MAP
  │
  ├── backend/                    -> FastAPI Python Backend Service
  │    ├── main.py                -> REST API Endpoints & JWT Auth Verification (Upload, Health, Clean, Chat, Report, Download, Delete)
- │    ├── ai_agent.py            -> Groq LLM integration & Prompt Engineering
+ │    ├── ai_agent.py            -> Groq LLM integration (Model: openai/gpt-oss-120b) & Prompt Engineering
  │    ├── sandbox.py             -> Safe Python code execution & Plotly JSON sanitizer
  │    ├── test_sandbox.py        -> Backend unit & integration test suite
  │    ├── requirements.txt       -> Python package list
@@ -132,9 +132,10 @@ SECTION 3: COMPLETE PROJECT WORKFLOW & WORKING MECHANICS
      Step 5: Email Formatting -> Standardize email columns to Lowercase (e.g., "USER@GMAIL.COM" -> "user@gmail.com").
      Re-uploads updated CSV to Supabase Storage and updates local temp cache.
 
-4. AI CHAT & VISUALIZATION WORKFLOW
+4. AI CHAT & VISUALIZATION WORKFLOW (LLM MODEL: openai/gpt-oss-120b)
    - User enters prompt or clicks "Suggest Visuals" -> POST /api/chat.
    - ai_agent.py constructs system prompt with dataset schema summary and calls Groq LLM API.
+   - LLM Model Used: openai/gpt-oss-120b via Groq Cloud LPU Inference Engine.
    - Generated Python code is executed by sandbox.py on user's isolated dataset:
      - Executes df = pd.read_csv("temp_storage/<user_id>/current_data.csv")
      - Generates Plotly figure object (fig).
