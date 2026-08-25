@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 SECTION 1: DEPENDENCIES & REQUIREMENTS
 --------------------------------------------------------------------------------
-When you copy or clone this project folder to another location or repository,
+When you clone this project folder to another location or repository,
 the following directories and files are ignored / automatically omitted to save
 space and prevent committing secrets. They MUST be restored in local development:
 
