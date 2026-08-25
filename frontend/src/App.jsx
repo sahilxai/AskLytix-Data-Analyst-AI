@@ -8,7 +8,8 @@ import DataCleaningAssistant from './components/DataCleaningAssistant'
 import ReportGenerator from './components/ReportGenerator'
 import Auth from './components/Auth'
 import { supabase } from './supabaseClient'
-import { Database, MessageSquare, BarChart2, Bot, Trash2, FileType, ArrowRight, LogOut, Loader2 } from 'lucide-react'
+import Logo from './components/Logo'
+import { Database, MessageSquare, BarChart2, Trash2, FileType, ArrowRight, LogOut, Loader2 } from 'lucide-react'
 
 function App() {
   const [datasetContext, setDatasetContext] = useState(null)
@@ -78,7 +79,7 @@ function App() {
         <div className="p-4 md:p-6">
           <div className="flex items-center justify-between md:justify-start gap-2 mb-3 md:mb-8 text-blue-400">
             <div className="flex items-center gap-2">
-              <Bot size={24} strokeWidth={2} />
+              <Logo className="w-6 h-6 shrink-0" />
               <h1 className="text-xl font-bold tracking-tight text-white">AskLytix</h1>
             </div>
             {/* Mobile Logout button */}

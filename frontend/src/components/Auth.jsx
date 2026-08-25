@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import { Bot, Mail, Lock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import Logo from './Logo'
+import { Mail, Lock, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 
 export default function Auth() {
   const [isRegister, setIsRegister] = useState(false)
@@ -86,8 +87,8 @@ export default function Auth() {
       <div className="w-full max-w-md bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative z-10 my-auto animate-in fade-in zoom-in-95 duration-300">
         {/* Asklytix Header / Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 text-blue-400 rounded-2xl flex items-center justify-center mb-3 border border-blue-500/30 shadow-lg shadow-blue-500/10">
-            <Bot size={32} strokeWidth={2} />
+          <div className="mb-3">
+            <Logo showBackground={true} />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-100">AskLytix</h1>
           <p className="text-sm text-slate-400 mt-1">
