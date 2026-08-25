@@ -1,7 +1,11 @@
+import os
 import requests
 import json
+from dotenv import load_dotenv
 
-GROQ_API_KEY = "gsk_your_groq_api_key"
+load_dotenv()
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 url = "https://api.groq.com/openai/v1/models"
 
 headers = {
