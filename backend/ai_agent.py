@@ -359,6 +359,25 @@ Dataset Info:
         }
 
 
+def _infer_chart_type(title, prompt):
+    text = f"{title} {prompt}".lower()
+    if "pie" in text or "donut" in text or "share" in text or "proportion" in text:
+        return "pie"
+    if "horizontal" in text and "bar" in text or "horizontal" in text:
+        return "horizontal_bar"
+    if "line" in text or "trend" in text or "over time" in text or "timeline" in text:
+        return "line"
+    if "area" in text:
+        return "area"
+    if "scatter" in text or "correlation" in text or "bubble" in text:
+        return "scatter"
+    if "heatmap" in text or "matrix" in text:
+        return "heatmap"
+    if "histogram" in text or "distribution" in text or "box" in text:
+        return "histogram"
+    return "bar"
+
+
 def generate_visualization_suggestions(dataset_info):
     """Generate 6 dataset-specific visualization prompt recommendations."""
     prompt = f"""You are an expert Data Analyst AI.
@@ -371,6 +390,7 @@ Return JSON with key "suggestions" containing a list of 6 objects, each having:
 - "id": integer 1-6
 - "title": Short catchy title (2-3 words, e.g. "Coffee popularity", "Sales trend", "Payment method")
 - "prompt": Clear, explicit user prompt instruction for generating a Plotly chart (e.g. "Create a bar chart showing the number of sales for each coffee type. Sort the coffee types from highest to lowest sales.")
+- "chart_type": One of "pie", "donut", "bar", "horizontal_bar", "line", "area", "scatter", "box", "histogram", "heatmap"
 
 Format JSON strictly like this:
 {{
@@ -378,7 +398,8 @@ Format JSON strictly like this:
     {{
       "id": 1,
       "title": "Coffee popularity",
-      "prompt": "Create a bar chart showing the number of sales for each coffee type. Sort the coffee types from highest to lowest sales."
+      "prompt": "Create a bar chart showing the number of sales for each coffee type. Sort the coffee types from highest to lowest sales.",
+      "chart_type": "bar"
     }}
   ]
 }}
@@ -399,23 +420,32 @@ Format JSON strictly like this:
             output_text = output_text[:-3]
 
         data = json.loads(output_text.strip())
-        return data.get("suggestions", [])
+        suggestions = data.get("suggestions", [])
+        for s in suggestions:
+            if not s.get("chart_type"):
+                s["chart_type"] = _infer_chart_type(s.get("title", ""), s.get("prompt", ""))
+            else:
+                s["chart_type"] = s["chart_type"].lower().strip()
+        return suggestions
     except Exception:
         return [
             {
                 "id": 1,
                 "title": "Category Distribution",
-                "prompt": "Create a bar chart showing the breakdown of records across categorical columns."
+                "prompt": "Create a bar chart showing the breakdown of records across categorical columns.",
+                "chart_type": "bar"
             },
             {
                 "id": 2,
                 "title": "Trend Over Time",
-                "prompt": "Create a line chart showing the trend of records over time."
+                "prompt": "Create a line chart showing the trend of records over time.",
+                "chart_type": "line"
             },
             {
                 "id": 3,
                 "title": "Proportion Breakdown",
-                "prompt": "Create a donut chart showing the percentage distribution of top categories."
+                "prompt": "Create a donut chart showing the percentage distribution of top categories.",
+                "chart_type": "pie"
             }
         ]
 

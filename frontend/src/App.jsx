@@ -9,12 +9,15 @@ import ReportGenerator from './components/ReportGenerator'
 import Auth from './components/Auth'
 import { supabase } from './supabaseClient'
 import Logo from './components/Logo'
-import { Database, MessageSquare, BarChart2, Trash2, FileType, ArrowRight, LogOut, Loader2 } from 'lucide-react'
+import ParticleCanvas from './components/ParticleCanvas'
+import { Database, MessageSquare, BarChart2, Trash2, FileType, ArrowRight, LogOut, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 
 function App() {
   const [datasetContext, setDatasetContext] = useState(null)
   const [chatHistory, setChatHistory] = useState([])
   const [currentChart, setCurrentChart] = useState(null)
+  const [generatedCharts, setGeneratedCharts] = useState([])
+  const [activeChartIndex, setActiveChartIndex] = useState(0)
   const [activeView, setActiveView] = useState('datasource') // 'datasource' | 'analysis'
   const [session, setSession] = useState(null)
   const [loadingSession, setLoadingSession] = useState(true)
@@ -41,8 +44,36 @@ function App() {
     setActiveView('analysis')
   }
 
-  const handleChartData = (chartData) => {
-    setCurrentChart(chartData)
+  const handleChartData = (chartData, metadata = {}) => {
+    // Determine title
+    const rawTitle = chartData?.layout?.title?.text || (typeof chartData?.layout?.title === 'string' ? chartData?.layout?.title : '') || metadata.title || metadata.query || `Visual ${generatedCharts.length + 1}`
+    const cleanTitle = typeof rawTitle === 'string' ? rawTitle.replace(/<[^>]*>?/gm, '').trim() : `Visual ${generatedCharts.length + 1}`
+
+    // Detect chart type
+    const firstTrace = chartData?.data?.[0] || {}
+    const traceType = firstTrace.type || 'bar'
+    const isHorizontal = traceType === 'bar' && firstTrace.orientation === 'h'
+    const visualChartType = isHorizontal ? 'horizontal_bar' : traceType
+
+    const clonedChartData = JSON.parse(JSON.stringify(chartData))
+
+    const newVisual = {
+      id: Date.now() + Math.random(),
+      chartData: clonedChartData,
+      title: cleanTitle || `Visual ${generatedCharts.length + 1}`,
+      summary: metadata.summary || metadata.suggestion || '',
+      query: metadata.query || '',
+      chartType: visualChartType,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
+    setGeneratedCharts(prev => {
+      const next = [...prev, newVisual]
+      setActiveChartIndex(next.length - 1)
+      return next
+    })
+    setCurrentChart(clonedChartData)
+
     if (mainRef.current) {
       mainRef.current.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -56,24 +87,23 @@ function App() {
     }
     setDatasetContext(null)
     setChatHistory([])
+    setGeneratedCharts([])
+    setActiveChartIndex(0)
     setCurrentChart(null)
     setActiveView('datasource')
   }
 
-  if (loadingSession) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-blue-400 flex items-center justify-center">
-        <Loader2 size={36} className="animate-spin" />
-      </div>
-    )
-  }
-
-  if (!session) {
-    return <Auth />
-  }
-
   return (
-    <div className="flex flex-col md:flex-row h-screen min-h-[100dvh] bg-slate-900 text-slate-100 overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans">
+    <>
+      <ParticleCanvas />
+      {loadingSession ? (
+        <div className="min-h-screen bg-transparent text-blue-400 flex items-center justify-center relative z-10">
+          <Loader2 size={36} className="animate-spin" />
+        </div>
+      ) : !session ? (
+        <Auth />
+      ) : (
+        <div className="flex flex-col md:flex-row h-screen min-h-[100dvh] bg-transparent text-slate-100 overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans relative z-10">
       {/* Sidebar */}
       <div className="w-full md:w-64 bg-slate-800 border-b md:border-b-0 md:border-r border-slate-700 flex flex-col justify-between shrink-0">
         <div className="p-4 md:p-6">
@@ -116,29 +146,29 @@ function App() {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="hidden md:block p-4 border-t border-slate-700/60 bg-slate-800/80 text-xs">
-          <div className="flex items-center justify-center gap-2 flex-wrap text-slate-300 font-medium">
-            <span className="text-slate-200 font-semibold">Sahil Bhirud</span>
-            <span className="text-slate-600">|</span>
+        <div className="hidden md:block p-3.5 border-t border-slate-700/80 bg-slate-900/60 backdrop-blur-sm">
+          <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
+            <span className="font-bold text-white tracking-wide">Sahil Bhirud</span>
+            <span className="text-slate-500 font-bold">|</span>
             <a
               href="https://github.com/sahilxai"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-white transition-colors group cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-slate-100 hover:text-white font-semibold transition-all group cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5 text-slate-300 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3.5 h-3.5 text-slate-100 group-hover:text-white transition-colors drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                 <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
               </svg>
               <span>GitHub</span>
             </a>
-            <span className="text-slate-600">|</span>
+            <span className="text-slate-500 font-bold">|</span>
             <a
               href="https://www.linkedin.com/in/sahilbhirud2005/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 hover:text-blue-400 transition-colors group cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-blue-400 hover:text-blue-300 font-semibold transition-all group cursor-pointer"
             >
-              <svg className="w-3.5 h-3.5 text-blue-400 group-hover:text-blue-300 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-3.5 h-3.5 text-blue-400 group-hover:text-blue-300 transition-colors drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.75a1.45 1.45 0 1 0 0 2.9 1.45 1.45 0 0 0 0-2.9z" />
               </svg>
               <span>LinkedIn</span>
@@ -154,7 +184,12 @@ function App() {
             {datasetContext ? `Dataset: ${datasetContext.filename} (${datasetContext.row_count} rows)` : 'Connect Data Source'}
           </h2>
           <div className="flex items-center gap-3">
-            {datasetContext && activeView === 'analysis' && <ReportGenerator currentChart={currentChart} />}
+            {datasetContext && activeView === 'analysis' && (
+              <ReportGenerator
+                currentChart={currentChart}
+                generatedCharts={generatedCharts}
+              />
+            )}
             <button
               onClick={() => supabase.auth.signOut()}
               className="hidden md:flex items-center gap-2 px-3 py-1.5 text-xs font-medium bg-slate-800/80 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700 hover:border-red-500/30 rounded-lg transition-all cursor-pointer shadow-sm"
@@ -225,26 +260,113 @@ function App() {
               <div className="flex-1 flex flex-col gap-6 md:gap-8 min-w-0">
 
                 {/* Visualizer */}
-                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 sm:p-6 shadow-xl shadow-slate-900/40 flex flex-col h-[450px] sm:h-[600px] relative transition-all duration-300 hover:border-blue-500/30 group">
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-4 sm:p-6 shadow-xl shadow-slate-900/40 flex flex-col h-[520px] sm:h-[650px] relative transition-all duration-300 hover:border-blue-500/30 group">
                   <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl" />
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg sm:text-xl font-medium flex items-center gap-2">
-                      <BarChart2 size={24} className="text-blue-400" />
-                      Visualization Canvas
-                    </h3>
-                  </div>
-                  <div className="flex-1 flex items-center justify-center bg-slate-900/60 rounded-xl border border-slate-700/30 overflow-hidden relative shadow-inner">
-                    {currentChart ? (
-                      <Visualizer chartData={currentChart} />
-                    ) : (
-                      <div className="text-slate-500 flex flex-col items-center gap-4 text-center px-6 max-w-sm">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-800 flex items-center justify-center shadow-lg border border-slate-700">
-                          <BarChart2 size={32} className="text-slate-600" />
+                  
+                  {/* Upper Side Header & Generated Visuals Tabs */}
+                  <div className="flex flex-col gap-3 mb-4 z-10">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base sm:text-xl font-semibold flex items-center gap-2 text-slate-100">
+                        <BarChart2 size={22} className="text-blue-400" />
+                        <span>Visualization Canvas</span>
+                        {generatedCharts.length > 0 && (
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 ml-1">
+                            {generatedCharts.length} {generatedCharts.length === 1 ? 'Visual' : 'Visuals'}
+                          </span>
+                        )}
+                      </h3>
+
+                      {generatedCharts.length > 1 && (
+                        <div className="flex items-center gap-1.5 bg-slate-900/70 p-1 rounded-xl border border-slate-700/60 shadow-sm">
+                          <button
+                            onClick={() => {
+                              const newIdx = activeChartIndex > 0 ? activeChartIndex - 1 : generatedCharts.length - 1
+                              setActiveChartIndex(newIdx)
+                              setCurrentChart(generatedCharts[newIdx].chartData)
+                            }}
+                            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Previous Visual"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span className="text-xs px-2 text-slate-300 font-medium whitespace-nowrap">
+                            {activeChartIndex + 1} of {generatedCharts.length}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const newIdx = activeChartIndex < generatedCharts.length - 1 ? activeChartIndex + 1 : 0
+                              setActiveChartIndex(newIdx)
+                              setCurrentChart(generatedCharts[newIdx].chartData)
+                            }}
+                            className="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Next Visual"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
                         </div>
-                        <h4 className="text-slate-300 font-medium text-base sm:text-lg">Empty Canvas</h4>
-                        <p className="text-xs sm:text-sm">Ask Gemini to generate a chart. It will be rendered beautifully in this space.</p>
+                      )}
+                    </div>
+
+                    {/* Navigation Tabs: #1, #2, #3, ..., #n */}
+                    {generatedCharts.length > 0 && (
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 custom-scrollbar pt-0.5">
+                        {generatedCharts.map((visual, idx) => {
+                          const isActive = idx === activeChartIndex
+                          return (
+                            <button
+                              key={visual.id || idx}
+                              onClick={() => {
+                                setActiveChartIndex(idx)
+                                setCurrentChart(visual.chartData)
+                              }}
+                              className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer border ${
+                                isActive
+                                  ? 'bg-gradient-to-r from-blue-600/35 via-indigo-600/35 to-purple-600/25 text-white border-blue-400/80 shadow-md shadow-blue-500/15 ring-1 ring-blue-500/40'
+                                  : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-700/60 hover:border-slate-600'
+                              }`}
+                              title={`Visual #${idx + 1}: ${visual.title}`}
+                            >
+                              <span className={`px-1.5 py-0.5 rounded-md flex items-center justify-center text-[11px] font-extrabold ${
+                                isActive ? 'bg-blue-500 text-white shadow-sm' : 'bg-slate-800 text-blue-400 group-hover:bg-slate-700 group-hover:text-blue-300'
+                              }`}>
+                                #{idx + 1}
+                              </span>
+                              <span className="truncate max-w-[120px] sm:max-w-[180px] text-slate-200 font-medium">
+                                {visual.title}
+                              </span>
+                              {isActive && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse ml-0.5" />
+                              )}
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
+                  </div>
+
+                  <div className="flex-1 flex items-center justify-center bg-slate-900/60 rounded-xl border border-slate-700/30 overflow-hidden relative shadow-inner">
+                    {(() => {
+                      const displayChart = (generatedCharts.length > 0 && generatedCharts[activeChartIndex])
+                        ? generatedCharts[activeChartIndex].chartData
+                        : currentChart
+                      const activeVisual = (generatedCharts.length > 0 && generatedCharts[activeChartIndex]) ? generatedCharts[activeChartIndex] : null
+                      return displayChart ? (
+                        <Visualizer
+                          key={activeVisual?.id || `visual-${activeChartIndex}`}
+                          chartData={displayChart}
+                          visualNumber={activeChartIndex + 1}
+                          title={activeVisual?.title}
+                        />
+                      ) : (
+                        <div className="text-slate-500 flex flex-col items-center gap-4 text-center px-6 max-w-sm">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-slate-800 flex items-center justify-center shadow-lg border border-slate-700">
+                            <BarChart2 size={32} className="text-slate-600" />
+                          </div>
+                          <h4 className="text-slate-300 font-medium text-base sm:text-lg">Empty Canvas</h4>
+                          <p className="text-xs sm:text-sm">Ask Gemini to generate a chart. It will be rendered beautifully in this space.</p>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -282,6 +404,8 @@ function App() {
         </main>
       </div>
     </div>
+      )}
+    </>
   )
 }
 

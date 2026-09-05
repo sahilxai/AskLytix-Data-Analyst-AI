@@ -209,6 +209,52 @@ async def upload_file(file: UploadFile = File(...), user_id: str = Depends(get_c
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/load-demo")
+async def load_demo_dataset(user_id: str = Depends(get_current_user_id)):
+    try:
+        demo_paths = [
+            os.path.join(os.path.dirname(__file__), "Salary.xlsx"),
+            os.path.join(os.path.dirname(__file__), "..", "Salary.xlsx"),
+            "Salary.xlsx"
+        ]
+        demo_file = None
+        for p in demo_paths:
+            if os.path.exists(p):
+                demo_file = p
+                break
+
+        if not demo_file:
+            raise HTTPException(status_code=404, detail="Demo dataset Salary.xlsx not found.")
+
+        df = pd.read_excel(demo_file)
+        # Clean column names
+        df.columns = df.columns.astype(str).str.strip().str.lower().str.replace(' ', '_')
+
+        # Convert to CSV bytes and save to local user path
+        local_path = get_user_local_path(user_id)
+        df.to_csv(local_path, index=False)
+
+        # Upload to Supabase Storage
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False)
+        upload_dataset_to_supabase(user_id, csv_buffer.getvalue().encode('utf-8'))
+
+        columns = df.columns.tolist()
+        dtypes = {col: str(dtype) for col, dtype in df.dtypes.items()}
+        preview_data = df.astype(object).where(pd.notnull(df), None).to_dict(orient="records")
+
+        return {
+            "columns": columns,
+            "dtypes": dtypes,
+            "preview": preview_data,
+            "filename": "Salary.xlsx",
+            "row_count": len(df)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def is_person_name_column(col_name: str) -> bool:
     col = str(col_name).lower().strip()
     exclude_keywords = [

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import api from '../api'
-import { Send, Loader2, Bot, User, Code, FileCode2, Sparkles, BarChart2, PieChart, LineChart, Activity, Grid, ArrowRight, X } from 'lucide-react'
+import { Send, Loader2, Bot, User, Code, FileCode2, Sparkles, BarChart2, BarChartHorizontal, PieChart, LineChart, AreaChart, ScatterChart, Activity, Grid, ArrowRight, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
 export default function ChatInterface({ chatHistory, setChatHistory, onChartGenerated }) {
@@ -93,7 +93,12 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
       setChatHistory(prev => [...prev, newAssistantMsg])
       
       if (data.chart) {
-        onChartGenerated(data.chart)
+        onChartGenerated(data.chart, {
+          query: userMessage,
+          summary: rawContent,
+          suggestion: data.suggestion,
+          title: data.chart.layout?.title?.text || (typeof data.chart.layout?.title === 'string' ? data.chart.layout?.title : '') || userMessage
+        })
       }
     } catch (error) {
       let errorMsg = error.response?.data?.detail || error.message
@@ -114,9 +119,52 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
     triggerChat(input)
   }
 
-  const getSuggestionIcon = (index) => {
-    const icons = [<BarChart2 key={0} size={15} />, <LineChart key={1} size={15} />, <PieChart key={2} size={15} />, <Grid key={3} size={15} />, <Activity key={4} size={15} />, <Sparkles key={5} size={15} />]
-    return icons[index % icons.length]
+  const getSuggestionIcon = (suggestion) => {
+    const chartType = (suggestion?.chart_type || '').toLowerCase().trim()
+    const text = `${suggestion?.title || ''} ${suggestion?.prompt || ''}`.toLowerCase()
+
+    // 1. Pie / Donut
+    if (chartType.includes('pie') || chartType.includes('donut') || text.includes('pie') || text.includes('donut') || text.includes('proportion') || text.includes('percentage share') || text.includes('share of') || text.includes('composition')) {
+      return <PieChart size={16} className="text-amber-400" />
+    }
+
+    // 2. Horizontal Bar Chart (Must check before general bar)
+    if (chartType.includes('horizontal') || text.includes('horizontal bar') || text.includes('horizontal-bar') || text.includes('horizontal column') || (text.includes('horizontal') && text.includes('bar'))) {
+      return <BarChartHorizontal size={16} className="text-emerald-400" />
+    }
+
+    // 3. Line / Trend / Time Series
+    if (chartType.includes('line') || chartType.includes('trend') || text.includes('line chart') || text.includes('trend') || text.includes('over time') || text.includes('timeline') || text.includes('timeseries') || text.includes('time series') || text.includes('progression')) {
+      return <LineChart size={16} className="text-cyan-400" />
+    }
+
+    // 4. Area Chart
+    if (chartType.includes('area') || text.includes('area chart') || text.includes('cumulative')) {
+      return <AreaChart size={16} className="text-teal-400" />
+    }
+
+    // 5. Scatter / Correlation / Bubble
+    if (chartType.includes('scatter') || chartType.includes('bubble') || text.includes('scatter') || text.includes('correlation') || text.includes('relationship between') || text.includes(' vs ') || text.includes('bubble')) {
+      return <ScatterChart size={16} className="text-purple-400" />
+    }
+
+    // 6. Heatmap / Matrix / Correlation Matrix
+    if (chartType.includes('heatmap') || chartType.includes('matrix') || text.includes('heatmap') || text.includes('correlation matrix') || text.includes('grid')) {
+      return <Grid size={16} className="text-rose-400" />
+    }
+
+    // 7. Box / Distribution / Histogram
+    if (chartType.includes('histogram') || chartType.includes('box') || chartType.includes('distribution') || text.includes('histogram') || text.includes('box plot') || text.includes('distribution') || text.includes('spread') || text.includes('variance') || text.includes('frequency')) {
+      return <Activity size={16} className="text-violet-400" />
+    }
+
+    // 8. Standard Bar / Column Chart
+    if (chartType.includes('bar') || chartType.includes('column') || text.includes('bar chart') || text.includes('column') || text.includes('count of') || text.includes('ranking') || text.includes('breakdown')) {
+      return <BarChart2 size={16} className="text-blue-400" />
+    }
+
+    // Default fallback
+    return <Sparkles size={16} className="text-indigo-400" />
   }
 
   return (
@@ -178,8 +226,8 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
                     onClick={() => handleSelectSuggestion(s.prompt)}
                     className="group p-3.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-blue-500/50 rounded-xl transition-all cursor-pointer shadow-md flex items-start gap-3 relative overflow-hidden"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                      {getSuggestionIcon(idx)}
+                    <div className="w-8 h-8 rounded-lg bg-slate-800/90 text-blue-400 flex items-center justify-center shrink-0 border border-slate-700/80 group-hover:scale-110 transition-transform shadow-inner">
+                      {getSuggestionIcon(s)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">
@@ -232,8 +280,8 @@ export default function ChatInterface({ chatHistory, setChatHistory, onChartGene
                     onClick={() => handleSelectSuggestion(s.prompt)}
                     className="group p-3.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-blue-500/40 rounded-xl transition-all cursor-pointer shadow-md flex items-start gap-3 relative overflow-hidden"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 group-hover:scale-110 transition-transform">
-                      {getSuggestionIcon(idx)}
+                    <div className="w-8 h-8 rounded-lg bg-slate-800/90 text-blue-400 flex items-center justify-center shrink-0 border border-slate-700/80 group-hover:scale-110 transition-transform shadow-inner">
+                      {getSuggestionIcon(s)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1">

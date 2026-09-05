@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import api from '../api'
-import { UploadCloud, FileType, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { UploadCloud, FileType, CheckCircle, AlertCircle, Loader2, FileSpreadsheet, Sparkles, Download } from 'lucide-react'
 
 export default function UploadZone({ onUploadSuccess }) {
   const [isDragging, setIsDragging] = useState(false)
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [loadingDemo, setLoadingDemo] = useState(false)
   const [error, setError] = useState(null)
 
   const handleDrag = (e) => {
@@ -77,6 +78,36 @@ export default function UploadZone({ onUploadSuccess }) {
     }
   }
 
+  const handleLoadDemo = async () => {
+    setLoadingDemo(true)
+    setError(null)
+    try {
+      // 1. First try backend direct load endpoint
+      const response = await api.post('/api/load-demo')
+      onUploadSuccess(response.data)
+    } catch (err) {
+      // 2. Fallback: fetch Salary.xlsx and upload as FormData
+      try {
+        const fileRes = await fetch('/Salary.xlsx')
+        if (!fileRes.ok) throw new Error("Could not fetch Salary.xlsx asset")
+        const blob = await fileRes.blob()
+        const demoFile = new File([blob], 'Salary.xlsx', {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        })
+        const formData = new FormData()
+        formData.append('file', demoFile)
+        const uploadRes = await api.post('/api/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        onUploadSuccess(uploadRes.data)
+      } catch (fallbackErr) {
+        setError(err.response?.data?.detail || fallbackErr.message || 'Failed to load demo dataset.')
+      }
+    } finally {
+      setLoadingDemo(false)
+    }
+  }
+
   return (
     <div className="w-full max-w-xl mx-auto">
       <div 
@@ -98,7 +129,7 @@ export default function UploadZone({ onUploadSuccess }) {
           className="hidden" 
           accept=".csv, .xlsx, .xls"
           onChange={handleChange}
-          disabled={uploading}
+          disabled={uploading || loadingDemo}
         />
         
         {file ? (
@@ -112,7 +143,7 @@ export default function UploadZone({ onUploadSuccess }) {
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 flex items-center gap-2"
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
               {uploading ? (
                 <>
@@ -128,7 +159,7 @@ export default function UploadZone({ onUploadSuccess }) {
             </button>
             <button 
               onClick={() => setFile(null)} 
-              className="mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
               disabled={uploading}
             >
               Choose a different file
@@ -146,6 +177,68 @@ export default function UploadZone({ onUploadSuccess }) {
           </label>
         )}
       </div>
+
+      {/* Demo Dataset Section */}
+      {!file && (
+        <div className="mt-6 flex flex-col items-center w-full animate-in fade-in duration-500">
+          <div className="flex items-center gap-3 w-full my-2">
+            <div className="h-px bg-slate-700/60 flex-1" />
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Or Explore With Demo Dataset
+            </span>
+            <div className="h-px bg-slate-700/60 flex-1" />
+          </div>
+
+          <div className="w-full mt-3 bg-slate-800/60 hover:bg-slate-800/90 border border-slate-700 hover:border-emerald-500/40 rounded-2xl p-4 transition-all duration-300 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4 shadow-lg shadow-slate-900/30 group">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="w-11 h-11 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                <FileSpreadsheet size={22} />
+              </div>
+              <div className="min-w-0 text-left">
+                <div className="flex items-center gap-2">
+                  <p className="text-slate-100 font-semibold text-sm sm:text-base truncate">Salary.xlsx</p>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+                    Demo Excel
+                  </span>
+                </div>
+                <p className="text-slate-400 text-xs mt-0.5 truncate">
+                  Employee Salary dataset (13 records · Salary, Gender, Roles)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+              <a
+                href="/Salary.xlsx"
+                download="Salary.xlsx"
+                className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 rounded-lg transition-colors cursor-pointer"
+                title="Download Salary.xlsx to your computer"
+              >
+                <Download size={16} />
+              </a>
+
+              <button
+                type="button"
+                onClick={handleLoadDemo}
+                disabled={loadingDemo || uploading}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs sm:text-sm rounded-xl shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/35 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                {loadingDemo ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={15} className="text-emerald-200" />
+                    <span>Load Demo</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
