@@ -30,6 +30,11 @@ export default function Auth() {
 
   const handleToggle = () => {
     setIsRegister(!isRegister)
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+    setShowPassword(false)
+    setShowConfirmPassword(false)
     setError('')
     setMessage('')
   }
